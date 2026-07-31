@@ -10,9 +10,9 @@ Paste a product link or a keyword, and the agent runs the full loop — **creati
 > Job-portfolio project; it does **not** touch real ad budgets. Real delivery is replaced by a **data-driven simulator** — auction mechanics and user-behavior distributions are fitted from public industrial datasets (iPinYou / Criteo), so the "deliver → feedback → optimize" loop runs on realistic distributions rather than random numbers. The campaign layer uses the adapter pattern to align strictly with real platform API schemas; "going live" only means swapping the adapter implementation.
 
 <p align="center">
-  <img src="docs/creative-example.png" width="340" alt="A creative generated end to end">
+  <img src="docs/hero.png" width="300" alt="A creative card: generated ad + CTR pre-ranking score">
 </p>
-<p align="center"><sub>A creative generated live — DeepSeek copy + fal.ai image + Pillow layout (CJK rendered in-container via Noto CJK).</sub></p>
+<p align="center"><sub>A creative generated live (DeepSeek copy + fal.ai image + Pillow layout) with its CTR pre-ranking score — hover the card to see the four-dimension breakdown.</sub></p>
 
 <!-- Optional: drop a dashboard screenshot/GIF at docs/dashboard.png and reference it here for extra impact. -->
 
