@@ -3,9 +3,7 @@
 
 **English** · [中文](#zh)
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) · [![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml) · 153 tests passing · runs offline with **zero API keys**
-
-<sub>Replace `OWNER/REPO` in the CI badge with your GitHub path after pushing.</sub>
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) · [![CI](https://github.com/Shomao1998/agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Shomao1998/agent/actions/workflows/ci.yml) · 153 tests passing · runs offline with **zero API keys**
 
 Paste a product link or a keyword, and the agent runs the full loop — **creative generation → compliance review → campaign build → smart bidding → CTR pre-ranking → simulated delivery → cross-platform attribution → auto-optimization** — then compares the same product across Meta / Google / TikTok (simulated) in one dashboard.
 
