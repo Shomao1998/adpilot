@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 运行时生成的创意图（代码会自动重建目录）
+webapp/static/gen/
+webapp/static/wizard_gen/
+demo_*_out/
+
+# 数据库 / 本地数据
+*.db
+*.sqlite
+*.sqlite3
+
+# 密钥 / 环境（绝不入库）—— key 从环境变量透传
+.env
+.env.*
+*.key
+.adpilot_key
+.deepseek_key
+.fal_key
+
+# 编辑器 / 系统
+.DS_Store
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,20 @@
+services:
+  dashboard:
+    build: .
+    ports:
+      - "8000:8000"
+    # 真实 LLM（可选）。默认离线，无需 key。开启后输入向导可实时生成、诊断走真实复述。
+    # 方案 A — Claude（默认 provider）：
+    # environment:
+    #   ADPILOT_LIVE: "1"
+    #   ANTHROPIC_API_KEY: "sk-ant-..."
+    # 方案 B — DeepSeek（更便宜，OpenAI 兼容）：
+    # environment:
+    #   ADPILOT_LIVE: "1"
+    #   ADPILOT_PROVIDER: "deepseek"
+    #   DEEPSEEK_API_KEY: "sk-..."
+    # 创意配图：URL 输入自动抓商品主图（零 key）。想让关键词/被反爬的站也有图，
+    # 再加文生图（二选一，在上面 environment 里加一行）：
+    #   SILICONFLOW_API_KEY: "sk-..."   # 硅基流动（国内、人民币、托管 Flux，推荐）
+    #   FAL_KEY: "..."                  # fal.ai（海外）
+    # 两个都配时用 ADPILOT_IMAGE_PROVIDER: "siliconflow" | "fal" 指定

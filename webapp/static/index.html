@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AdPilot</title>
+<style>
+  /* TikTok for Business 风: 薄荷绿画布、悬浮白卡、青绿主色 + 珊瑚红点缀、深靛蓝结构色 */
+  :root {
+    --bg:#dceee9; --card:#ffffff; --ink:#16183a; --body:#45475f; --muted:#9698a8;
+    --faint:#b7b9c6; --line:#eef0f4; --hover:#f6f8fa; --soft:#575654;
+    --teal:#12bdb0; --teal-ink:#0a9a90; --teal-pale:#e2f7f4;
+    --coral:#fe4d6a; --coral-pale:#ffe6ea; --navy:#2b2f77;
+    --amber:#e8a33e; --amber-pale:#fbeed6;
+    --shadow:0 6px 22px rgba(24,32,72,.07), 0 1px 3px rgba(24,32,72,.05);
+    --shadow-hi:0 12px 30px rgba(24,32,72,.11);
+    --g1:#2b2f77; --g2:#12bdb0; --g3:#fe4d6a;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+    font:15px/1.6 ui-sans-serif,-apple-system,"Segoe UI","PingFang SC","Helvetica Neue",sans-serif;
+    -webkit-font-smoothing:antialiased; }
+  header { padding:18px 40px 0; background:var(--card); position:sticky; top:0; z-index:5;
+    box-shadow:0 1px 0 rgba(24,32,72,.06); }
+  .top { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:20px; margin:0; font-weight:750; letter-spacing:-.01em; color:var(--ink); }
+  h1 b { color:var(--teal); font-weight:750; } h1 .dot { color:var(--coral); }
+  .right { margin-left:auto; display:flex; gap:12px; align-items:center; }
+  .controls { display:flex; gap:10px; align-items:center; }
+  .controls label { color:var(--muted); font-size:13px; }
+  .controls input { width:52px; background:#fff; color:var(--ink); border:1.5px solid var(--line);
+    border-radius:9px; padding:6px 9px; font:inherit; font-size:13px; }
+  .controls input:focus { outline:none; border-color:var(--teal); }
+  button { background:var(--teal); color:#fff; border:0; border-radius:22px; padding:8px 18px;
+    cursor:pointer; font:inherit; font-size:13px; font-weight:650; box-shadow:0 2px 8px rgba(18,189,176,.28); }
+  button:hover { background:var(--teal-ink); }
+  .langbox { display:flex; align-items:center; gap:7px; }
+  .langbox .langlbl { color:var(--muted); font-size:13px; }
+  .langsel { appearance:none; -webkit-appearance:none; background:#fff;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%239698a8' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 10px center;
+    color:var(--ink); border:1.5px solid var(--line); border-radius:9px;
+    padding:6px 28px 6px 12px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .langsel:hover { border-color:var(--teal); }
+  .langsel:focus { outline:none; border-color:var(--teal); }
+  nav { display:flex; gap:3px; align-items:center; margin-top:16px; padding-bottom:2px; flex-wrap:wrap; }
+  nav a.fn-step { display:flex; align-items:center; gap:8px; padding:8px 13px; font-size:14px;
+    color:var(--muted); text-decoration:none; cursor:pointer; border-radius:10px;
+    font-weight:550; border-bottom:2.5px solid transparent; white-space:nowrap; }
+  nav a.fn-step:hover { color:var(--ink); background:var(--hover); }
+  nav a.fn-step.on { color:var(--teal-ink); border-bottom-color:var(--teal); }
+  .fn-n { display:inline-flex; align-items:center; justify-content:center; width:21px; height:21px;
+    border-radius:50%; background:var(--line); color:var(--muted); font-size:11.5px; font-weight:700; flex:0 0 auto; }
+  nav a.fn-step.on .fn-n { background:var(--teal); color:#fff; }
+  nav a.fn-step.done .fn-n { background:var(--teal-pale); color:var(--teal-ink); }
+  .fn-arrow { color:var(--faint); font-size:12px; user-select:none; padding:0 1px; }
+  .funnel-sub { margin-top:11px; padding-bottom:13px; color:var(--muted); font-size:12.5px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .funnel-sub .fn-step-lbl { color:var(--teal-ink); font-weight:700; }
+  .funnel-sub .fn-src { margin-left:auto; font-weight:600; padding:3px 10px; border-radius:20px; font-size:11.5px; }
+  .funnel-sub .fn-src.live { background:var(--teal-pale); color:var(--teal-ink); }
+  .funnel-sub .fn-src.sample { background:#eef0f4; color:var(--muted); }
+  main { padding:28px 40px 64px; display:grid; gap:26px; max-width:1140px; }
+  main > section { background:var(--card); border-radius:16px; padding:22px 26px; box-shadow:var(--shadow); }
+  section > h2 { font-size:15px; margin:0 0 18px; color:var(--ink); font-weight:700; letter-spacing:-.01em; }
+  .muted { color:var(--muted); }
+
+  .kpis { padding:8px 6px; }
+  .kpis > div { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:4px; }
+  .kpi { padding:12px 18px; border-right:1px solid var(--line); }
+  .kpi:last-child { border-right:0; }
+  .kpi .label { color:var(--muted); font-size:12.5px; }
+  .kpi .val { font-size:27px; font-weight:750; margin-top:5px; letter-spacing:-.02em; color:var(--ink); }
+  .kpi .val.accent { color:var(--teal); }
+
+  .legend { display:flex; gap:20px; margin-bottom:14px; font-size:12.5px; color:var(--body); flex-wrap:wrap; }
+  .legend .k { display:inline-block; width:22px; height:0; vertical-align:3px; margin-right:8px;
+    border-top-width:3px; border-top-style:solid; border-radius:2px; }
+  .charts { display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+  .charts .cap { color:var(--muted); font-size:12px; margin-bottom:6px; font-weight:550; }
+
+  table { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+  th,td { text-align:right; padding:11px 12px; border-bottom:1px solid var(--line); }
+  th:first-child,td:first-child { text-align:left; }
+  thead th { color:var(--muted); font-weight:500; font-size:12px; }
+  tbody tr:last-child td { border-bottom:0; }
+  tbody tr:hover td { background:var(--hover); }
+  .plat { font-weight:650; color:var(--ink); }
+  .swatch { display:inline-block; width:18px; height:0; border-top-width:3px; border-top-style:solid;
+    border-radius:2px; vertical-align:4px; margin-right:9px; }
+
+  .card-list .row { padding:16px 6px; border-bottom:1px solid var(--line); }
+  .card-list .row:last-child { border-bottom:0; }
+  .day { font-weight:700; margin-right:10px; color:var(--ink); font-size:16px; }
+  .sub { color:var(--muted); font-size:13px; }
+  .narr { margin-top:4px; color:var(--soft); }
+  .badge { font-size:11px; padding:2px 9px; border-radius:6px; background:var(--tag,#f1f0ee);
+    background:var(--teal-pale); color:var(--teal-ink); font-weight:600; margin-right:8px; }
+  .sub-block { margin-top:12px; }
+  .sub-block .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+    font-weight:700; margin-bottom:6px; }
+  .pp-line { font-size:13.5px; color:var(--body); padding:3px 0; font-variant-numeric:tabular-nums; }
+  .dotk { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px; }
+  .dec { border-left:3px solid transparent; padding:6px 0 6px 12px; border-radius:3px; margin-top:2px; }
+  .dec.applied { border-left-color:var(--teal); }
+  .mono { font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:13px; font-weight:650; color:var(--navy); }
+  .reason { color:var(--soft); font-size:13px; margin-top:2px; }
+  .tag { font-size:11px; padding:2px 9px; border-radius:20px; background:var(--teal-pale); color:var(--teal-ink);
+    font-weight:600; font-variant-numeric:tabular-nums; }
+
+  .brief { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .field { border:1.5px solid var(--line); border-radius:13px; padding:16px 20px; }
+  .field h3 { margin:0 0 12px; font-size:13px; color:var(--teal-ink); font-weight:700; }
+  .kv { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); }
+  .kv:last-child { border-bottom:0; }
+  .kv .k { color:var(--muted); } .kv .v { font-weight:600; text-align:right; color:var(--ink); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .chip { font-size:12.5px; padding:3px 12px; border-radius:20px; background:var(--teal-pale); color:var(--teal-ink); font-weight:550; }
+  .wiz-in { display:flex; gap:10px; }
+  .wiz-in input { flex:1; background:#fff; color:var(--ink); border:1.5px solid var(--line); border-radius:11px; padding:11px 15px; font:inherit; font-size:14px; }
+  .wiz-in input:focus { outline:none; border-color:var(--teal); }
+  .wiz-in button { padding:0 22px; border-radius:11px; white-space:nowrap; }
+  .wiz-err { color:#d32a48; background:var(--coral-pale); border-radius:10px; padding:12px 16px; margin-top:14px; font-size:13.5px; }
+  .wiz-q { color:#b7791a; background:var(--amber-pale); border-radius:10px; padding:10px 15px; margin-top:12px; font-size:13px; }
+  .blk-h { font-size:14px; font-weight:700; color:var(--ink); margin:22px 0 12px; }
+
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; }
+  .g-card { perspective:1200px; transition:.15s; }
+  .g-card:hover { transform:translateY(-2px); }
+  .g-inner { position:relative; transform-style:preserve-3d; transition:transform .55s cubic-bezier(.4,.1,.2,1); }
+  .g-card.flip:hover .g-inner { transform:rotateY(180deg); }
+  .g-face { border:1.5px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; box-shadow:var(--shadow); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  .g-card:hover .g-face { box-shadow:var(--shadow-hi); }
+  .g-front { position:relative; }
+  .g-back { position:absolute; inset:0; transform:rotateY(180deg); padding:15px 16px; display:flex; flex-direction:column; }
+  .flip-hint { color:var(--faint); }
+  .sb { font-size:12px; color:var(--body); height:100%; display:flex; flex-direction:column; }
+  .sb-h { font-weight:700; color:var(--ink); font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+  .sb-overall { margin:6px 0 12px; color:var(--muted); font-size:11px; }
+  .sb-overall b { color:var(--teal-ink); font-size:22px; font-weight:750; }
+  .sb-row { display:flex; align-items:center; gap:8px; margin:8px 0; }
+  .sb-l { width:86px; color:var(--muted); font-size:11px; flex:0 0 auto; }
+  .sb-bar { flex:1; height:6px; background:var(--line); border-radius:4px; overflow:hidden; }
+  .sb-bar > span { display:block; height:100%; background:linear-gradient(90deg,var(--navy),var(--teal)); border-radius:4px; }
+  .sb-v { width:30px; text-align:right; font-variant-numeric:tabular-nums; color:var(--body); font-weight:600; font-size:11px; }
+  .sb-img { color:var(--teal); font-size:9px; }
+  .sb-note { margin-top:auto; padding-top:10px; font-size:10px; color:var(--faint); line-height:1.45; }
+  .g-card .thumb { aspect-ratio:1/1; background:var(--hover); display:flex; align-items:center; justify-content:center; color:var(--faint); font-size:12px; }
+  .g-card .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .g-card .body { padding:13px 15px; }
+  .g-card .pf { font-size:11px; color:var(--teal-ink); text-transform:uppercase; letter-spacing:.04em; font-weight:650; }
+  .g-card .hl { font-weight:650; margin:5px 0; font-size:14px; color:var(--ink); }
+  .g-card .bd { color:var(--body); font-size:13px; }
+  .bar { height:6px; background:var(--line); border-radius:4px; margin-top:12px; overflow:hidden; }
+  .bar > span { display:block; height:100%; background:linear-gradient(90deg,var(--teal),#2fd0c4); border-radius:4px; }
+  .status { display:inline-block; font-size:11px; padding:3px 11px; border-radius:20px; margin-top:11px; font-weight:600; }
+  .status.pass { background:var(--teal-pale); color:var(--teal-ink); }
+  .status.revise { background:var(--amber-pale); color:#b7791a; }
+  .status.reject { background:var(--coral-pale); color:#d32a48; }
+
+  .tnode { padding:11px 6px; }
+  .tnode .lvl1 { font-weight:700; color:var(--ink); }
+  .tnode .lvl { color:var(--body); padding-left:24px; position:relative; font-size:13.5px; margin-top:4px; }
+  .tnode .lvl:before { content:"└"; position:absolute; left:6px; color:var(--teal); }
+  .extid { font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--muted); }
+  details.api { border:1.5px solid var(--line); border-radius:12px; margin-bottom:10px; overflow:hidden; }
+  details.api > summary { padding:12px 16px; cursor:pointer; display:flex; gap:10px; align-items:center; font-size:13.5px; list-style:none; }
+  details.api > summary::-webkit-details-marker { display:none; }
+  details.api[open] > summary { border-bottom:1.5px solid var(--line); background:var(--hover); }
+  .method { font-family:ui-monospace,Menlo,monospace; font-size:11px; padding:2px 9px; border-radius:6px; background:var(--navy); color:#fff; font-weight:600; }
+  .endpoint { font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .api .jx { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+  .api .jx > div { padding:12px 16px; } .api .jx > div:first-child { border-right:1.5px solid var(--line); }
+  .api .jx h4 { margin:0 0 6px; font-size:11px; color:var(--teal-ink); text-transform:uppercase; letter-spacing:.05em; font-weight:700; }
+  pre { margin:0; font-family:ui-monospace,Menlo,monospace; font-size:12px; line-height:1.5; white-space:pre-wrap; word-break:break-word; color:var(--body); }
+  .loading { color:var(--muted); padding:40px 0; }
+  .srcban { margin:0 0 16px; padding:9px 14px; border-radius:9px; font-size:12.5px; font-weight:600; }
+  .srcban.live { background:rgba(18,189,176,.10); color:var(--teal-ink); border:1px solid rgba(18,189,176,.30); }
+  .srcban.live b { color:var(--navy); }
+  .srcban.sample { background:#f6f6f4; color:var(--muted); border:1px dashed var(--line); }
+  .read-hint { margin:0 0 14px; padding:11px 15px; border-radius:11px; background:var(--teal-pale);
+    color:var(--soft); font-size:13px; line-height:1.6; }
+  .read-hint b { color:var(--teal-ink); font-weight:700; }
+  .trend-row { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:9px; font-size:12px; color:var(--muted); }
+  .trend-row .tr-item { display:inline-flex; align-items:center; gap:6px; }
+  .trend-row .tr-item b { color:var(--body); font-weight:600; }
+  .up { color:var(--teal-ink); font-weight:700; }
+  .down { color:var(--coral); font-weight:700; }
+  .chart-note { margin-top:10px; font-size:11.5px; color:var(--faint); }
+  .th-hint { font-weight:500; color:var(--muted); font-size:12px; }
+  @media (max-width:760px){ header,main{padding-left:20px;padding-right:20px;}
+    .charts,.brief{grid-template-columns:1fr;} .api .jx{grid-template-columns:1fr;}
+    .api .jx > div:first-child{border-right:0;border-bottom:1.5px solid var(--line);} }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>Ad<b>Pilot</b> <span class="dot">·</span> <span id="app-title"></span></h1>
+    <div class="right">
+      <div class="controls" id="controls" style="display:none">
+        <label id="days-label"></label>
+        <input id="days" type="number" min="1" max="30" value="7">
+        <button id="run"></button>
+      </div>
+      <div class="langbox">
+        <span class="langlbl" id="lang-lbl"></span>
+        <select class="langsel" id="lang-select">
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <nav id="nav"></nav>
+  <div id="funnel-sub" class="funnel-sub"></div>
+</header>
+<main id="view"><p class="loading">…</p></main>
+
+<script>
+// ---------- i18n ----------
+const I18N = {
+  zh: {
+    app_title:"看板", rerun:"重新跑", days_label:"模拟天数", loading:"加载中…",
+    sim_loading:"首次模拟计算中（约 20 秒），之后秒开…",
+    nav_brief:"输入向导", nav_creatives:"创意画廊", nav_campaigns:"Campaign 管理",
+    nav_dashboard:"跨平台对比", nav_decisions:"决策日志",
+    wiz_title:"输入向导 · 输入商品 URL 或关键词，实时生成创意",
+    wiz_placeholder:"粘贴商品 URL，或输入关键词（如：便携咖啡机 促销 北美）",
+    wiz_hint:"实时生成走真实 LLM（意图解析 → 生成 → 审核 → 打分，约 1–2 分钟）；离线模式请看下方示例。",
+    wiz_running:"真实 LLM 运行中，约 1–2 分钟：意图解析 → 分平台生成 → 两级审核 → CTR 打分…",
+    wiz_synced:"✓ 已生成，「创意画廊」与「决策日志 / 跨平台对比」都已按本次创意更新",
+    src_live:"本次投放 · 基于你生成的创意模拟", src_sample:"示例数据 · 未输入商品，展示固定合成模拟",
+    step:"步骤", src_live_pill:"本次投放", src_sample_pill:"示例数据",
+    fn_brief:"输入商品 URL 或关键词 → 解析成投放 Brief",
+    fn_creatives:"分平台生成创意 + 两级审核 + CTR 预排序",
+    fn_campaigns:"把过审创意上线到三平台（Mock API）",
+    fn_decisions:"逐日模拟投放，出价 Agent 每天诊断 + 调优",
+    fn_dashboard:"跨平台结果对比：ROAS / 消耗 / 转化",
+    wiz_empty:"请输入商品 URL 或关键词", wiz_reqfail:"请求失败：",
+    result_brief:"解析结果 · Brief", example_brief:"示例 Brief（离线固定数据）",
+    gen_creatives:"生成创意", pass_of:"组过审",
+    f_product:"产品", f_name:"名称", f_category:"类目", f_price:"价格",
+    f_audience:"受众", f_geo:"地区", f_age:"年龄",
+    f_budget:"预算（USD）", f_total:"总预算", f_daily:"日预算", f_currency:"币种",
+    f_delivery:"投放设置", f_platforms:"平台", f_objective:"目标", f_tone:"调性", f_landing:"落地页",
+    gallery_title:"创意画廊", gallery_sub:"（审核状态 + CTR 预排序分）",
+    not_passed:"未过审", ctr_score:"CTR 分", rsa:"RSA", titles:"标题", descs:"描述",
+    score_detail:"打分明细", d_visual:"视觉吸引力", d_clarity:"信息清晰度",
+    d_cta:"CTA 强度", d_fit:"平台匹配", flip_hint:"悬浮看明细",
+    score_note_img:"视觉分来自图像分析，其余由 LLM 评估",
+    score_note_txt:"四维均由 LLM 从文案评估（未接入图像）",
+    cm_title:"Campaign 管理 · 三平台层级（Mock API，schema 对齐真实平台）",
+    ad_group:"Ad group", ad:"Ad", api_title:"API 调用记录查看器", api_reqs:"次实际发出的请求",
+    req:"Request", resp:"Response",
+    kpi_days:"模拟天数", kpi_spend:"总消耗", kpi_rev:"总收入", kpi_roas:"综合 ROAS",
+    kpi_cpa:"目标 CPA", kpi_adj:"生效自动调整", times:"次",
+    ts_title:"跨平台时序（同标的物并排）", roas:"ROAS", daily_spend:"每日消耗 (USD)",
+    summary:"平台汇总", th_platform:"平台", th_spend:"消耗", th_rev:"收入",
+    th_conv:"转化", th_roas:"ROAS", th_cpa:"CPA",
+    read_hint:"读图", adj_marker:"┊ = Agent 出价/预算调整日（趋势拐点参考）", roas_vs_d0:"ROAS 含较首日涨跌",
+    dec_title:"决策日志（评估 + 出价 Agent · 按日倒序）",
+    overall:"总体", per_platform:"分平台表现", suggestion:"建议",
+    lead:"领先", trail:"垫底", d_spend:"消耗", d_rev:"收入",
+    applied:"已执行", pending:"待批", no_narr:"（无 LLM 复述）", none_dash:"—",
+    lang_label:"语言",
+  },
+  en: {
+    app_title:"Dashboard", rerun:"Re-run", days_label:"Sim days", loading:"Loading…",
+    sim_loading:"Running first simulation (~20s), instant afterwards…",
+    nav_brief:"Input Wizard", nav_creatives:"Creative Gallery", nav_campaigns:"Campaigns",
+    nav_dashboard:"Cross-platform", nav_decisions:"Decision Log",
+    wiz_title:"Input Wizard · paste a product URL or keyword to generate creatives live",
+    wiz_placeholder:"Paste a product URL, or type keywords (e.g. portable coffee maker, US promo)",
+    wiz_hint:"Live generation uses a real LLM (intent → generate → review → score, ~1–2 min); see the example below in offline mode.",
+    wiz_running:"Real LLM running, ~1–2 min: intent parsing → per-platform generation → two-tier review → CTR scoring…",
+    wiz_synced:"✓ Generated — Creative Gallery and Decision Log / Cross-platform now reflect these creatives",
+    src_live:"This campaign · simulated from your generated creatives", src_sample:"Sample data · no product entered; showing a fixed synthetic simulation",
+    step:"Step", src_live_pill:"Your campaign", src_sample_pill:"Sample data",
+    fn_brief:"Enter a product URL or keyword → parse into a Brief",
+    fn_creatives:"Per-platform creatives + two-tier review + CTR ranking",
+    fn_campaigns:"Push approved creatives live to 3 platforms (Mock API)",
+    fn_decisions:"Simulate day by day; the bidding agent diagnoses + tunes",
+    fn_dashboard:"Cross-platform results: ROAS / spend / conversions",
+    wiz_empty:"Please enter a product URL or keyword", wiz_reqfail:"Request failed: ",
+    result_brief:"Parsed · Brief", example_brief:"Example Brief (offline fixed data)",
+    gen_creatives:"Creatives", pass_of:"approved",
+    f_product:"Product", f_name:"Name", f_category:"Category", f_price:"Price",
+    f_audience:"Audience", f_geo:"Geo", f_age:"Age",
+    f_budget:"Budget (USD)", f_total:"Total", f_daily:"Daily", f_currency:"Currency",
+    f_delivery:"Delivery", f_platforms:"Platforms", f_objective:"Objective", f_tone:"Tone", f_landing:"Landing",
+    gallery_title:"Creative Gallery", gallery_sub:"(review status + CTR pre-ranking score)",
+    not_passed:"Not approved", ctr_score:"CTR score", rsa:"RSA", titles:"headlines", descs:"descriptions",
+    score_detail:"Score breakdown", d_visual:"Visual appeal", d_clarity:"Clarity",
+    d_cta:"CTA strength", d_fit:"Platform fit", flip_hint:"Hover for detail",
+    score_note_img:"Visual from image analysis; rest by LLM",
+    score_note_txt:"All dims scored by LLM from copy (no image)",
+    cm_title:"Campaigns · three-platform hierarchy (Mock API, schema aligned to real platforms)",
+    ad_group:"Ad group", ad:"Ad", api_title:"API call log viewer", api_reqs:"actual requests sent",
+    req:"Request", resp:"Response",
+    kpi_days:"Sim days", kpi_spend:"Total spend", kpi_rev:"Total revenue", kpi_roas:"Blended ROAS",
+    kpi_cpa:"Target CPA", kpi_adj:"Auto adjustments", times:"",
+    ts_title:"Cross-platform time series (same product, side by side)", roas:"ROAS", daily_spend:"Daily spend (USD)",
+    summary:"Platform summary", th_platform:"Platform", th_spend:"Spend", th_rev:"Revenue",
+    th_conv:"Conv.", th_roas:"ROAS", th_cpa:"CPA",
+    read_hint:"How to read", adj_marker:"┊ = agent bid/budget adjustment day (trend inflection cue)", roas_vs_d0:"ROAS shows change vs day 0",
+    dec_title:"Decision Log (Diagnosis + Bidding Agent · newest day first)",
+    overall:"Overall", per_platform:"Per-platform", suggestion:"Recommendation",
+    lead:"top", trail:"bottom", d_spend:"spend", d_rev:"revenue",
+    applied:"applied", pending:"pending", no_narr:"(no LLM narrative)", none_dash:"—",
+    lang_label:"Language",
+  },
+};
+let lang = localStorage.getItem("adpilot_lang") || "zh";
+const t = (k) => (I18N[lang] && I18N[lang][k]) ?? I18N.zh[k] ?? k;
+
+const STYLE = { meta_sim:{c:'#2b2f77'}, google_sim:{c:'#12bdb0'}, tiktok_sim:{c:'#fe4d6a'} };
+// 漏斗顺序：① 输入 → ② 创意 → ③ 上线 → ④ 每日模拟+调优 → ⑤ 跨平台对比
+const PAGES = [['brief','nav_brief'],['creatives','nav_creatives'],['campaigns','nav_campaigns'],
+               ['decisions','nav_decisions'],['dashboard','nav_dashboard']];
+const FUNNEL = {brief:'fn_brief', creatives:'fn_creatives', campaigns:'fn_campaigns',
+                decisions:'fn_decisions', dashboard:'fn_dashboard'};
+const STEP_N = Object.fromEntries(PAGES.map(([p],i)=>[p,i+1]));  // 页 -> 步骤序号
+let hasLive=false, liveProduct='';   // 是否已跑过向导（全局“本次/示例”指示）
+const $ = (h)=>{ const t=document.createElement('template'); t.innerHTML=h.trim(); return t.content.firstChild; };
+const el = ()=> document.getElementById('view');
+const fmt=(n,d=2)=> n==null?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d});
+const pct=(n)=> n==null?'—':(n*100).toFixed(2)+'%';
+const esc=(s)=> String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+let pilot=null, cache={};
+async function getJSON(u){ const r=await fetch(u); return {status:r.status, body:await r.json()}; }
+async function getPilot(force){
+  if(pilot && !force) return pilot;
+  if(force){ const r=await getJSON('/api/run?lang='+lang+'&days='+(+document.getElementById('days').value||7)); pilot=r.body; noteSource(pilot); return pilot; }
+  for(;;){ const r=await getJSON('/api/results?lang='+lang); if(r.status===200){ pilot=r.body; noteSource(pilot); return pilot; }
+    await new Promise(z=>setTimeout(z,1500)); }
+}
+async function getScenario(name){ if(cache[name]) return cache[name]; cache[name]=(await getJSON('/api/'+name)).body; return cache[name]; }
+
+function lineChart(series,{w=460,h=210,pad=36,fmtY=(v)=>v,markers=[]}={}){
+  const days=series[0].pts.map(p=>p.day);
+  const all=series.flatMap(s=>s.pts.map(p=>p.v)).filter(v=>v!=null);
+  const max=Math.max(...all,0.0001),min=Math.min(...all,0);
+  const x=(dd)=> pad+(w-pad-10)*(days.length<2?0.5:(dd-days[0])/(days[days.length-1]-days[0]));
+  const y=(v)=> h-pad-(h-pad-12)*(v-min)/(max-min||1);
+  let svg=`<svg viewBox="0 0 ${w} ${h}" width="100%" preserveAspectRatio="xMidYMid meet">`;
+  [min,(min+max)/2,max].forEach(v=>{ svg+=`<line x1="${pad}" x2="${w-10}" y1="${y(v)}" y2="${y(v)}" stroke="#eef0f4"/><text x="4" y="${y(v)+4}" fill="#b7b9c6" font-size="10.5">${fmtY(v)}</text>`; });
+  // Agent 调整日：虚线竖标（画在网格与折线之间，趋势拐点的“原因锚点”）
+  markers.forEach(dd=>{ const xx=x(dd);
+    svg+=`<line x1="${xx}" x2="${xx}" y1="${pad-4}" y2="${h-pad}" stroke="#c3c6d6" stroke-width="1" stroke-dasharray="2 3"/>`
+      +`<circle cx="${xx}" cy="${pad-4}" r="2.4" fill="#c3c6d6"/>`; });
+  days.forEach(dd=> svg+=`<text x="${x(dd)}" y="${h-8}" fill="#b7b9c6" font-size="10.5" text-anchor="middle">D${dd}</text>`);
+  series.forEach(s=>{ const pts=s.pts.filter(p=>p.v!=null);
+    const dstr=pts.map((p,i)=>(i?'L':'M')+x(p.day)+' '+y(p.v)).join(' ');
+    svg+=`<path d="${dstr}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    pts.forEach(p=> svg+=`<circle cx="${x(p.day)}" cy="${y(p.v)}" r="3" fill="#fff" stroke="${s.color}" stroke-width="2"/>`); });
+  return svg+'</svg>';
+}
+function sourceBanner(d){
+  if(d && d.source==='live'){ const c=d.campaign||{};
+    return `<div class="srcban live">${t('src_live')}${c.product?' · <b>'+esc(c.product)+'</b>':''}</div>`; }
+  return `<div class="srcban sample">${t('src_sample')}</div>`;
+}
+const seriesFor=(pls,f)=> pls.map(pl=>({color:STYLE[pl.platform].c,pts:pl.series.map(r=>({day:r.day,v:r[f]}))}));
+const legend=(pls)=> '<div class="legend">'+pls.map(pl=>`<span><span class="k" style="border-top-color:${STYLE[pl.platform].c}"></span>${pl.platform}</span>`).join('')+'</div>';
+const ADJ_ACTIONS=['raise_bid','lower_bid','raise_budget','lower_budget'];
+// Agent 实际生效的出价/预算调整发生在哪些天（去重，图上竖标 + 读图提示用）
+const adjustDays=(d)=> [...new Set((d.decisions||[]).filter(x=>x.applied&&ADJ_ACTIONS.includes(x.action)).map(x=>x.day))].sort((a,b)=>a-b);
+// 每平台 D0 → D末 的起止趋势条（涨绿跌红）
+function trendReadout(pls, field, fmtV){
+  return '<div class="trend-row">'+pls.map(pl=>{ const s=pl.series;
+    const a=s[0][field], b=s[s.length-1][field], dl=b-a, up=dl>=0;
+    return `<span class="tr-item"><span class="dotk" style="background:${STYLE[pl.platform].c}"></span>`
+      +`<b>${pl.platform}</b> ${fmtV(a)}→${fmtV(b)} <span class="${up?'up':'down'}">${up?'▲':'▼'}${fmtV(Math.abs(dl))}</span></span>`;
+  }).join('')+'</div>';
+}
+// 确定性“读图”结论：本期最高 ROAS 平台 + 变化最大者 + 调整次数（不依赖 LLM）
+function dashInsight(d){
+  const days=d.summary.days, nadj=d.summary.n_applied_adjustments;
+  const top=[...d.platforms].sort((a,b)=>b.totals.roas-a.totals.roas)[0];
+  let mv=null;
+  d.platforms.forEach(pl=>{ const s=pl.series; if(s.length<2) return;
+    const dl=s[s.length-1].roas-s[0].roas;
+    if(!mv||Math.abs(dl)>Math.abs(mv.dl)) mv={p:pl.platform,dl,a:s[0].roas,b:s[s.length-1].roas}; });
+  const sign=(x)=>(x>=0?'+':'')+fmt(x,1);
+  if(lang==='en'){
+    let m=`Over <b>${days} days</b>, <b>${top.platform}</b> led on blended ROAS (<b>${fmt(top.totals.roas,2)}</b>).`;
+    if(mv) m+=` <b>${mv.p}</b> moved the most: ROAS ${fmt(mv.a,1)} → ${fmt(mv.b,1)} (${sign(mv.dl)}).`;
+    m+=` The agent applied <b>${nadj}</b> adjustment${nadj===1?'':'s'}, marked ┊ on the charts.`;
+    return m;
+  }
+  let m=`<b>${days} 天</b>内，<b>${top.platform}</b> 综合 ROAS 最高（<b>${fmt(top.totals.roas,2)}</b>）。`;
+  if(mv) m+=`<b>${mv.p}</b> 变化最大：ROAS ${fmt(mv.a,1)} → ${fmt(mv.b,1)}（${sign(mv.dl)}）。`;
+  m+=`Agent 共执行 <b>${nadj}</b> 次调整，已在图中用 ┊ 标出。`;
+  return m;
+}
+
+function briefGrid(b){
+  return `<div class="brief">
+    <div class="field"><h3>${t('f_product')}</h3>
+      <div class="kv"><span class="k">${t('f_name')}</span><span class="v">${esc(b.product.name)}</span></div>
+      <div class="kv"><span class="k">${t('f_category')}</span><span class="v">${esc(b.product.category||'—')}</span></div>
+      <div class="kv"><span class="k">${t('f_price')}</span><span class="v">${b.product.price_usd!=null?'$'+fmt(b.product.price_usd):'—'}</span></div>
+      <div class="chips">${b.product.selling_points.map(s=>`<span class="chip">${esc(s)}</span>`).join('')}</div></div>
+    <div class="field"><h3>${t('f_audience')}</h3>
+      <div class="kv"><span class="k">${t('f_geo')}</span><span class="v">${b.audience.geo.join(', ')}</span></div>
+      <div class="kv"><span class="k">${t('f_age')}</span><span class="v">${b.audience.age_min}–${b.audience.age_max}</span></div>
+      <div class="chips">${b.audience.interests.map(s=>`<span class="chip">${esc(s)}</span>`).join('')}</div></div>
+    <div class="field"><h3>${t('f_budget')}</h3>
+      <div class="kv"><span class="k">${t('f_total')}</span><span class="v">$${fmt(b.budget.total_usd,0)}</span></div>
+      <div class="kv"><span class="k">${t('f_daily')}</span><span class="v">$${fmt(b.budget.daily_usd,0)}</span></div>
+      <div class="kv"><span class="k">${t('f_currency')}</span><span class="v">${b.budget.currency}</span></div></div>
+    <div class="field"><h3>${t('f_delivery')}</h3>
+      <div class="kv"><span class="k">${t('f_platforms')}</span><span class="v">${b.platforms.join(' · ')}</span></div>
+      <div class="kv"><span class="k">${t('f_objective')}</span><span class="v">${esc(b.objective)}</span></div>
+      <div class="kv"><span class="k">${t('f_tone')}</span><span class="v">${esc(b.brand_tone)}</span></div>
+      <div class="kv"><span class="k">${t('f_landing')}</span><span class="v" style="font-size:12px">${esc(b.landing_url)}</span></div></div>
+  </div>`;
+}
+function scoreBreakdown(it){
+  const s=it.scores||{};
+  const dims=[['visual_appeal',t('d_visual')],['clarity',t('d_clarity')],
+              ['cta_strength',t('d_cta')],['platform_fit',t('d_fit')]];
+  const rows=dims.map(([k,l])=>{ const v=+s[k]||0;
+    const tag=(k==='visual_appeal'&&s.visual_from_image)?' <span class="sb-img" title="image">◉</span>':'';
+    return `<div class="sb-row"><span class="sb-l">${l}${tag}</span>
+      <span class="sb-bar"><span style="width:${Math.round(v*100)}%"></span></span>
+      <span class="sb-v">${v.toFixed(2)}</span></div>`; }).join('');
+  const note=s.visual_from_image?t('score_note_img'):t('score_note_txt');
+  return `<div class="sb"><div class="sb-h">${t('score_detail')} · ${it.platform}</div>
+    <div class="sb-overall"><b>${it.ctr_score}</b> ${t('ctr_score')}</div>${rows}
+    <div class="sb-note">${note}</div></div>`;
+}
+function galleryCard(it){
+  const thumb=it.thumb?`<img src="${it.thumb}" alt="">`:t('not_passed');
+  const copy=it.platform==='google'
+    ? `<div class="hl">${esc(it.rsa_headlines[0]||'')}</div><div class="bd">${esc(it.rsa_descriptions[0]||'')}</div><div class="sub" style="margin-top:4px">${t('rsa')} · ${it.rsa_headlines.length} ${t('titles')} / ${it.rsa_descriptions.length} ${t('descs')}</div>`
+    : `<div class="hl">${esc(it.headline)}</div><div class="bd">${esc(it.body)}</div>`;
+  const canFlip=!!it.scores;
+  const hint=canFlip?` <span class="flip-hint">· ${t('flip_hint')}</span>`:'';
+  const front=`<div class="g-face g-front"><div class="thumb">${thumb}</div><div class="body">
+    <div class="pf">${it.platform} · ${it.variant_id}</div>${copy}
+    <div class="bar"><span style="width:${Math.round(it.ctr_score*100)}%"></span></div>
+    <div class="sub" style="margin-top:5px">${t('ctr_score')} ${it.ctr_score}${hint}</div>
+    <span class="status ${it.verdict}">${it.verdict}${it.reasons.length?' · '+esc(it.reasons.join('; ')):''}</span>
+  </div></div>`;
+  const back=canFlip?`<div class="g-face g-back">${scoreBreakdown(it)}</div>`:'';
+  return $(`<div class="g-card${canFlip?' flip':''}"><div class="g-inner">${front}${back}</div></div>`);
+}
+
+async function runWizard(input, out){
+  input=(input||'').trim();
+  if(!input){ out.innerHTML=`<div class="wiz-q">${t('wiz_empty')}</div>`; return; }
+  out.innerHTML=`<p class="loading">${t('wiz_running')}</p>`;
+  let d;
+  try{ const r=await fetch('/api/wizard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({input,lang})});
+    d=await r.json(); if(!r.ok){ out.innerHTML=`<div class="wiz-err">${esc(d.error||'error')}</div>`; return; }
+  }catch(e){ out.innerHTML=`<div class="wiz-err">${t('wiz_reqfail')}${esc(e.message)}</div>`; return; }
+  cache={};     // 清整个场景缓存：创意画廊 + Campaign 都要按本次输入重取 live（漏清 campaigns 会导致第3步仍显示旧示例）
+  pilot=null;   // 本次创意已接进模拟：清掉 pilot 缓存，决策日志/看板下次会重取 live 结果
+  hasLive=true; liveProduct=(d.brief&&d.brief.product&&d.brief.product.name)||'';
+  updateFunnelSub((location.hash||'#brief').slice(1));   // 顶部漏斗即刻切到“本次投放”
+  out.innerHTML='';
+  out.append($(`<div class="sub" style="margin-bottom:6px">${t('wiz_synced')}</div>`));
+  out.append($(`<div><div class="blk-h">${t('result_brief')}</div>${briefGrid(d.brief)}</div>`));
+  if(d.questions && d.questions.length) out.append($(`<div class="wiz-q">${d.questions.map(esc).join('<br>')}</div>`));
+  const gs=$(`<div><div class="blk-h">${t('gen_creatives')} · ${d.creatives.n_pass}/${d.creatives.n_total} ${t('pass_of')}</div><div class="gallery"></div></div>`);
+  const g=gs.querySelector('.gallery'); d.creatives.items.forEach(it=> g.append(galleryCard(it)));
+  out.append(gs);
+}
+
+async function pageBrief(v){
+  v.innerHTML='';
+  const wiz=$(`<section><h2>${t('wiz_title')}</h2>
+    <div class="wiz-in"><input id="wiz-input" placeholder="${t('wiz_placeholder')}"><button id="wiz-go">${t('gen_creatives')}</button></div>
+    <div class="sub" style="margin-top:9px">${t('wiz_hint')}</div>
+    <div id="wiz-out"></div></section>`);
+  v.append(wiz);
+  const go=()=>runWizard(wiz.querySelector('#wiz-input').value, wiz.querySelector('#wiz-out'));
+  wiz.querySelector('#wiz-go').onclick=go;
+  wiz.querySelector('#wiz-input').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+  const b=await getScenario('brief');
+  v.append($(`<section><h2>${t('example_brief')}</h2>${briefGrid(b)}</section>`));
+}
+
+async function pageCreatives(v){
+  const d=await getScenario('creatives'); noteSource(d); v.innerHTML='';
+  v.append($(sourceBanner(d)));
+  const sec=$(`<section><h2>${t('gallery_title')} · ${d.n_pass}/${d.n_total} ${t('pass_of')}${t('gallery_sub')}</h2><div class="gallery"></div></section>`);
+  const g=sec.querySelector('.gallery'); d.items.forEach(it=> g.append(galleryCard(it)));
+  v.append(sec);
+}
+
+async function pageCampaigns(v){
+  const d=await getScenario('campaigns'); noteSource(d); v.innerHTML='';
+  v.append($(sourceBanner(d)));
+  const tree=$(`<section><h2>${t('cm_title')}</h2><div class="card-list"></div></section>`);
+  const tw=tree.querySelector('.card-list');
+  d.tree.forEach(x=> tw.append($(`<div class="row tnode">
+    <div class="lvl1">${x.platform} <span class="extid">${esc(x.campaign_id)}</span></div>
+    <div class="lvl">${t('ad_group')} <span class="extid">${esc(x.ad_group_id)}</span></div>
+    <div class="lvl">${t('ad')} <span class="extid">${esc(x.ad_id)}</span></div></div>`)));
+  v.append(tree);
+  const log=$(`<section><h2>${t('api_title')}（${d.api_log.length} ${t('api_reqs')}）</h2><div id="apis"></div></section>`);
+  const aw=log.querySelector('#apis');
+  d.api_log.forEach(c=> aw.append($(`<details class="api"><summary>
+      <span class="method">${c.method}</span><span class="endpoint">${esc(c.endpoint)}</span>
+      <span class="sub" style="margin-left:auto">${c.platform}</span></summary>
+      <div class="jx"><div><h4>${t('req')}</h4><pre>${esc(JSON.stringify(c.request,null,2))}</pre></div>
+      <div><h4>${t('resp')}</h4><pre>${esc(JSON.stringify(c.response,null,2))}</pre></div></div></details>`)));
+  v.append(log);
+}
+
+async function pageDashboard(v){
+  v.innerHTML=`<p class="loading">${t('sim_loading')}</p>`;
+  const d=await getPilot(); const s=d.summary; v.innerHTML='';
+  v.append($(sourceBanner(d)));
+  const kpis=$(`<section class="kpis"><div></div></section>`); const kg=kpis.querySelector('div');
+  [[t('kpi_days'),s.days,0],[t('kpi_spend'),'$'+fmt(s.total_spend_usd,0),0],[t('kpi_rev'),'$'+fmt(s.total_revenue_usd,0),0],
+   [t('kpi_roas'),fmt(s.blended_roas,2),1],[t('kpi_cpa'),'$'+fmt(s.target_cpa_usd,0),0],[t('kpi_adj'),s.n_applied_adjustments+' '+t('times'),1]
+  ].forEach(([l,x,a])=> kg.append($(`<div class="kpi"><div class="label">${l}</div><div class="val ${a?'accent':''}">${x}</div></div>`)));
+  v.append(kpis);
+  const mk=adjustDays(d);
+  const charts=$(`<section><h2>${t('ts_title')}</h2>
+    <div class="read-hint">${t('read_hint')}：${dashInsight(d)}</div>
+    ${legend(d.platforms)}<div class="charts"></div></section>`);
+  const cw=charts.querySelector('.charts');
+  cw.append($(`<div><div class="cap">${t('roas')}</div>${lineChart(seriesFor(d.platforms,'roas'),{fmtY:v=>v.toFixed(1),markers:mk})}
+    ${trendReadout(d.platforms,'roas',v=>fmt(v,1))}</div>`));
+  cw.append($(`<div><div class="cap">${t('daily_spend')}</div>${lineChart(seriesFor(d.platforms,'spend_usd'),{fmtY:v=>'$'+v.toFixed(0),markers:mk})}</div>`));
+  if(mk.length) charts.querySelector('.charts').insertAdjacentHTML('afterend',
+    `<div class="chart-note">${t('adj_marker')}</div>`);
+  v.append(charts);
+  const tbl=$(`<section><h2>${t('summary')} <span class="th-hint">· ${t('roas_vs_d0')}</span></h2><table><thead><tr><th>${t('th_platform')}</th><th>${t('th_spend')}</th><th>${t('th_rev')}</th><th>${t('th_conv')}</th><th>${t('th_roas')}</th><th>${t('th_cpa')}</th></tr></thead><tbody></tbody></table></section>`);
+  const tb=tbl.querySelector('tbody');
+  d.platforms.forEach(pl=>{ const tt=pl.totals,st=STYLE[pl.platform],s=pl.series;
+    const dl=s[s.length-1].roas-s[0].roas, up=dl>=0;
+    const arw=`<span class="${up?'up':'down'}">${up?'▲':'▼'}${fmt(Math.abs(dl),1)}</span>`;
+    tb.append($(`<tr><td class="plat"><span class="swatch" style="border-top-color:${st.c}"></span>${pl.platform}</td>
+      <td>$${fmt(tt.spend_usd,0)}</td><td>$${fmt(tt.revenue_usd,0)}</td><td>${tt.conversions}</td><td>${fmt(tt.roas,2)} ${arw}</td><td>${tt.cpa_usd==null?'—':'$'+fmt(tt.cpa_usd,1)}</td></tr>`)); });
+  v.append(tbl);
+}
+
+async function pageDecisions(v){
+  v.innerHTML=`<p class="loading">${t('sim_loading')}</p>`;
+  const d=await getPilot(); v.innerHTML='';
+  v.append($(sourceBanner(d)));
+  const sec=$(`<section><h2>${t('dec_title')}</h2><div class="card-list"></div></section>`);
+  const w=sec.querySelector('.card-list');
+  const days=[...d.diagnoses].sort((a,b)=>b.day-a.day);   // 倒序：Dn 在上，D0 在下
+  days.forEach(r=>{
+    const row=$(`<div class="row"></div>`);
+    // 总体
+    row.append($(`<div><span class="day">D${r.day}</span><span class="badge">${t('overall')}</span>
+      <span class="sub">ROAS ${fmt(r.blended_roas,2)} · ${t('d_spend')} $${fmt(r.spend_usd,0)} · ${t('d_rev')} $${fmt(r.revenue_usd,0)} · ${t('lead')} ${r.best_platform} · ${t('trail')} ${r.worst_platform}</span></div>`));
+    // 分平台表现分析
+    const pp=$(`<div class="sub-block"><div class="lbl">${t('per_platform')}</div></div>`);
+    d.platforms.forEach(pl=>{ const x=pl.series.find(z=>z.day===r.day); if(!x) return;
+      pp.append($(`<div class="pp-line"><span class="dotk" style="background:${STYLE[pl.platform].c}"></span><b>${pl.platform}</b> · CTR ${pct(x.ctr)} · CVR ${pct(x.cvr)} · ROAS ${fmt(x.roas,2)} · CPA ${x.cpa_usd==null?'—':'$'+fmt(x.cpa_usd,1)}</div>`)); });
+    row.append(pp);
+    // 建议
+    const sug=$(`<div class="sub-block"><div class="lbl">${t('suggestion')}</div></div>`);
+    if(r.narrative) sug.append($(`<div class="narr">${esc(r.narrative)}</div>`));
+    const decs=d.decisions.filter(x=>x.day===r.day && x.action!=='hold');
+    decs.forEach(x=>{ const chg=(x.old_value!=null&&x.new_value!=null)?` <span class="tag">${fmt(x.old_value,0)} → ${fmt(x.new_value,0)}</span>`:'';
+      sug.append($(`<div class="dec ${x.applied?'applied':''}"><span class="plat">${x.platform}</span> <span class="mono">${x.action}</span>${chg} <span class="sub">${x.applied?t('applied'):t('pending')}</span><div class="reason">${esc(x.reason)} <span class="muted">→ ${esc(x.expected_impact)}</span></div></div>`)); });
+    if(!r.narrative && !decs.length) sug.append($(`<div class="sub muted">${t('none_dash')}</div>`));
+    row.append(sug);
+    w.append(row);
+  });
+  v.append(sec);
+}
+
+const RENDER={ brief:pageBrief, creatives:pageCreatives, campaigns:pageCampaigns, dashboard:pageDashboard, decisions:pageDecisions };
+function applyStaticLabels(){
+  document.getElementById('app-title').textContent=t('app_title');
+  document.getElementById('days-label').textContent=t('days_label');
+  document.getElementById('run').textContent=t('rerun');
+  document.getElementById('lang-lbl').textContent=t('lang_label');
+  document.getElementById('lang-select').value=lang;
+  document.querySelectorAll('nav a .fn-lbl').forEach(s=> s.textContent=t(s.parentElement.dataset.k));
+  document.documentElement.lang=lang;
+}
+function updateFunnelSub(hash){
+  const n=STEP_N[hash], fs=document.getElementById('funnel-sub');
+  const src=hasLive
+    ? `<span class="fn-src live">${t('src_live_pill')}${liveProduct?' · '+esc(liveProduct):''}</span>`
+    : `<span class="fn-src sample">${t('src_sample_pill')}</span>`;
+  fs.innerHTML=`<span class="fn-step-lbl">${t('step')} ${n} / ${PAGES.length}</span>`
+    +`<span>· ${t(FUNNEL[hash])}</span>${src}`;
+}
+function noteSource(d){   // 收到带 source 的 payload 时同步全局“本次/示例”指示
+  if(!d || !d.source) return;
+  hasLive = d.source==='live';
+  if(d.campaign && d.campaign.product) liveProduct=d.campaign.product;
+  updateFunnelSub((location.hash||'#brief').slice(1));
+}
+function route(){
+  let hash=(location.hash||'#brief').slice(1);
+  if(!RENDER[hash]) hash='brief';
+  applyStaticLabels();
+  const cur=STEP_N[hash];
+  document.querySelectorAll('nav a.fn-step').forEach(a=>{
+    a.classList.toggle('on',a.dataset.p===hash);
+    a.classList.toggle('done',STEP_N[a.dataset.p]<cur);   // 已经过的步骤淡青底
+  });
+  updateFunnelSub(hash);
+  document.getElementById('controls').style.display=(hash==='dashboard'||hash==='decisions')?'flex':'none';
+  const v=el(); v.innerHTML=`<p class="loading">${t('loading')}</p>`;
+  RENDER[hash](v).catch(e=> v.innerHTML='<p class="loading">'+esc(e.message)+'</p>');
+}
+const nav=document.getElementById('nav');
+PAGES.forEach(([p,k],i)=>{
+  if(i) nav.append($(`<span class="fn-arrow">→</span>`));
+  nav.append($(`<a class="fn-step" data-p="${p}" data-k="${k}" href="#${p}"><span class="fn-n">${i+1}</span><span class="fn-lbl"></span></a>`));
+});
+document.getElementById('lang-select').onchange=(e)=>{
+  lang=e.target.value; localStorage.setItem('adpilot_lang',lang);
+  pilot=null; cache={};   // 清缓存：pilot 诊断 + 场景数据按新语言重新取
+  route();
+};
+document.getElementById('run').onclick=async()=>{ await getPilot(true); route(); };
+window.addEventListener('hashchange',route);
+route();
+</script>
+</body>
+</html>

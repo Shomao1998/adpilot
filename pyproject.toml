@@ -1,0 +1,49 @@
+[project]
+name = "adsim"
+version = "0.1.0"
+description = "AdPilot 投放模拟器：数据驱动的二价/GSP 拍卖 + 点击/转化事件流（全程 USD 计价，ADR-5）"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "SQLAlchemy>=2.0",
+    "pydantic>=2.5",
+    "pillow>=10.1",
+    "httpx>=0.27",
+    "langgraph>=0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+]
+# 真实 LLM 调用才需要；测试与离线演示走 FakeLLM，不装也能跑
+llm = [
+    "anthropic>=0.40",
+]
+# W5 看板后端
+web = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+]
+# 云模拟后端（ADPILOT_BACKEND=cloud）：Redis 状态+队列、RQ worker、S3/MinIO 对象存储、
+# Postgres 持久化。local 模式（默认）不需要，本地/测试零额外依赖。
+cloud = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "redis>=5.0",
+    "rq>=1.16",
+    "boto3>=1.34",
+    "psycopg[binary]>=3.1",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["adsim", "adplatform", "adcreative", "adpilot", "webapp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

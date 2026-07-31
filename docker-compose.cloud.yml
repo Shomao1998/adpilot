@@ -1,0 +1,99 @@
+# 本地"模拟云"编排：用开源等价物在单机上重现一套云原生拓扑（云无关，换任意云
+# 只替换托管服务，应用零改动）。
+#
+#   web       无状态 API/看板（ECS Fargate / Cloud Run / Azure Container Apps）
+#   worker    消费队列跑长任务：pilot 模拟 + LLM 诊断（同上，独立伸缩）
+#   redis     状态存储 + 任务队列（ElastiCache / Memorystore / Azure Cache）
+#   postgres  完成结果持久化（RDS / Cloud SQL / Azure PG Flexible Server）
+#   minio     创意图对象存储，S3 兼容（S3 / GCS / Azure Blob）+ CDN 位
+#
+# 启动:  docker compose -f docker-compose.cloud.yml up --build
+#        看板 http://localhost:8000   MinIO 控制台 http://localhost:9001 (minioadmin/minioadmin)
+# 实时向导（可选）: 在 x-app-env 里取消注释 ADPILOT_LIVE + provider key。
+
+x-app-env: &app-env
+  ADPILOT_BACKEND: "cloud"
+  REDIS_URL: "redis://redis:6379/0"
+  DATABASE_URL: "postgresql://adpilot:adpilot@postgres:5432/adpilot"
+  S3_ENDPOINT: "http://minio:9000"        # 容器内 boto3 上传用
+  S3_PUBLIC_URL: "http://localhost:9000/adpilot"  # 浏览器加载图片用（映射到宿主）
+  S3_BUCKET: "adpilot"
+  S3_KEY: "minioadmin"
+  S3_SECRET: "minioadmin"
+  # --- 实时 LLM + 文生图（从宿主环境变量透传，key 不落文件；不设则离线，
+  #     离线下 pilot 模拟仍完整可跑，只有向导需真实 LLM）---
+  ADPILOT_LIVE: "${ADPILOT_LIVE:-}"
+  ADPILOT_PROVIDER: "${ADPILOT_PROVIDER:-}"
+  DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
+  ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+  ADPILOT_IMAGE_PROVIDER: "${ADPILOT_IMAGE_PROVIDER:-}"
+  FAL_KEY: "${FAL_KEY:-}"
+  SILICONFLOW_API_KEY: "${SILICONFLOW_API_KEY:-}"
+
+services:
+  web:
+    build: .
+    environment: *app-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+      createbuckets: {condition: service_completed_successfully}
+    command: uvicorn webapp.server:app --host 0.0.0.0 --port 8000
+
+  worker:
+    build: .
+    environment: *app-env
+    depends_on:
+      redis: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+      createbuckets: {condition: service_completed_successfully}
+    command: python worker.py
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: adpilot
+      POSTGRES_PASSWORD: adpilot
+      POSTGRES_DB: adpilot
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adpilot"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"    # S3 API（浏览器直接读创意图）
+      - "9001:9001"    # 控制台
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # 一次性：建桶 + 设匿名可读（创意图公开读，浏览器直连）
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      minio: {condition: service_healthy}
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb -p local/adpilot &&
+      mc anonymous set download local/adpilot
+      "

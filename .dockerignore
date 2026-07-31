@@ -1,0 +1,12 @@
+tests/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+*.egg-info/
+webapp/static/gen/
+demo_w3_out/
+demo_w4_out/
+.git/
+.venv/
+webapp/static/wizard_gen/
