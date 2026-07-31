@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # 创意图渲染需要中文字体（与 Docker 镜像一致，避免 CJK 豆腐块）
+      - name: Install CJK font
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+
+      - name: Install
+        run: pip install -e '.[dev,web]'
+
+      # 全程 FakeLLM，零 API 成本；内存 SQLite，无需外部服务
+      - name: Test
+        run: pytest -q
